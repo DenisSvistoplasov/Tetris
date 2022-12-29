@@ -53,21 +53,18 @@ function removeEventHandlers() {
 
 
 function createContinueTouchAttachers(element, handler, delay = 200, delay2 = 50) {
-  let isDown = false;
   let downInterval, downTimeout;
   function addEventListener() {
     element.addEventListener('touchstart', onTouchStart);
     element.addEventListener('touchend', onTouchEnd);
   }
   function onTouchStart() {
-    isDown = true;
     handler();
     downTimeout = setTimeout(() => {
       downInterval = setInterval(handler, delay2);
     }, delay);
   }
   function onTouchEnd() {
-    isDown = false;
     clearInterval(downInterval);
     clearTimeout(downTimeout);
   }
