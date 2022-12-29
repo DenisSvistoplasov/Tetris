@@ -20,6 +20,9 @@ for (let i = 0; i < Field.width; i++) {
 }
 
 document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', function (e) {
+  e.preventDefault();
+});
 
 const btnLeft = document.getElementById('left');
 const btnRight = document.getElementById('right');
