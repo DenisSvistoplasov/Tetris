@@ -19,16 +19,88 @@ for (let i = 0; i < Field.width; i++) {
   }
 }
 
+document.addEventListener('contextmenu', e => e.preventDefault());
 
-function handler(e) {
-  if (e.key == 'ArrowDown') currentFigure.GoDown();
-  if (e.key == 'ArrowLeft') currentFigure.GoLeft();
-  if (e.key == 'ArrowRight') currentFigure.GoRight();
-  if (e.key == 'ArrowUp') currentFigure.Rotate();
+const btnLeft = document.getElementById('left');
+const btnRight = document.getElementById('right');
+const btnUp = document.getElementById('up');
+const btnDown = document.getElementById('down');
+
+const handleGoDown = () => currentFigure.GoDown();
+const handleGoLeft = () => currentFigure.GoLeft();
+const handleGoRight = () => currentFigure.GoRight();
+const handleRotate = () => currentFigure.Rotate();
+function keyboardHandler(e) {
+  if (e.key == 'ArrowDown') handleGoDown();
+  if (e.key == 'ArrowLeft') handleGoLeft();
+  if (e.key == 'ArrowRight') handleGoRight();
+  if (e.key == 'ArrowUp') handleRotate();
 }
 
-function addEvents() {document.addEventListener('keydown', handler);}
-function removeEvents() {document.removeEventListener('keydown', handler);}
+function addEventHandlers() {
+  //keyboard
+  document.addEventListener('keydown', keyboardHandler);
+  //touch buttons
+  addContinueEventHandlers();
+
+}
+function removeEventHandlers() {
+  //keyboard
+  document.removeEventListener('keydown', keyboardHandler);
+  //touch buttons
+  removeContinueEventHandlers();
+}
+
+
+function createContinueTouchAttachers(element, handler, delay = 200, delay2 = 50) {
+  let isDown = false;
+  let downInterval, downTimeout;
+  function addEventListener() {
+    element.addEventListener('touchstart', onTouchStart);
+    element.addEventListener('touchend', onTouchEnd);
+  }
+  function onTouchStart() {
+    isDown = true;
+    handler();
+    downTimeout = setTimeout(() => {
+      downInterval = setInterval(handler, delay2);
+    }, delay);
+  }
+  function onTouchEnd() {
+    isDown = false;
+    clearInterval(downInterval);
+    clearTimeout(downTimeout);
+  }
+  function removeEventListener() {
+    element.removeEventListener('touchstart', onTouchStart);
+    element.removeEventListener('touchend', onTouchEnd);
+    clearInterval(downInterval);
+    clearTimeout(downTimeout);
+  }
+
+  return {
+    addEventListener,
+    removeEventListener
+  };
+}
+let continueAttaches = [
+  createContinueTouchAttachers(btnLeft, handleGoLeft),
+  createContinueTouchAttachers(btnRight, handleGoRight),
+  createContinueTouchAttachers(btnDown, handleGoDown),
+  createContinueTouchAttachers(btnUp, handleRotate),
+];
+addContinueEventHandlers = () => {
+  continueAttaches.forEach(({addEventListener}) => addEventListener());
+}
+removeContinueEventHandlers = () => {
+  continueAttaches.forEach(({removeEventListener}) => removeEventListener());
+}
+
+
+
+
+
+
 
 // Mobile version
 function detectMob() {
@@ -48,22 +120,7 @@ function detectMob() {
 if (detectMob()) {
   console.log(detectMob());
   document.getElementsByClassName('control')[0].style.display = 'block';
-  document.getElementById('up').addEventListener('click', () => {
-    document.dispatchEvent(new Event('focus'));
-    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowUp'}));
-  });
-  document.getElementById('left').addEventListener('click', () => {
-    document.dispatchEvent(new Event('focus'));
-    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowLeft'}));
-  });
-  document.getElementById('right').addEventListener('click', () => {
-    document.dispatchEvent(new Event('focus'));
-    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowRight'}));
-  });
-  document.getElementById('down').addEventListener('click', () => {
-    document.dispatchEvent(new Event('focus'));
-    document.dispatchEvent(new KeyboardEvent('keydown', {'key': 'ArrowDown'}));
-  });
+
   document.getElementById('start').addEventListener('click', () => {
     document.dispatchEvent(new Event('focus'));
     document.dispatchEvent(new KeyboardEvent('keydown', {'code': 'Space'}));
@@ -72,12 +129,11 @@ if (detectMob()) {
 
 function initializeFigure() {
   currentFigure = new Figure(null, Field.element, squareSide, {a: 0, b: Math.floor(Field.width / 2 - 1)});
-  addEvents();
+  addEventHandlers();
 }
-initializeFigure();
 
 function landing() {
-  removeEvents();
+  removeEventHandlers();
   currentFigure.squares.forEach(sq => {
     Field.array[sq.position.a][sq.position.b] = sq;
   });
@@ -93,7 +149,7 @@ function landing() {
         return false;
       }
     }
-    setTimeout(() => {addEvents();}, 100);
+    setTimeout(() => {addEventHandlers();}, 100);
   }, delay);
 }
 
@@ -177,6 +233,7 @@ let start = document.getElementsByClassName('start')[0];
 document.addEventListener('keydown', e => {
   if (e.code == 'Space') {
     if (!isStarted) {
+      initializeFigure();
       start.style.display = 'none';
       isStarted = true;
     }
@@ -186,11 +243,11 @@ document.addEventListener('keydown', e => {
     }
     isGoingOn = !isGoingOn;
     if (isGoingOn) {
-      addEvents();
+      addEventHandlers();
       pause.style.display = 'none';
     }
     else {
-      removeEvents();
+      removeEventHandlers();
       pause.style.display = 'block';
     }
   }
